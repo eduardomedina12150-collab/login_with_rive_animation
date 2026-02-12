@@ -14,6 +14,15 @@ class _LoginScreenState extends State<LoginScreen> {
 //crear variable para mostrar u ocultar la contraseña
   bool _obscureText = true;
 
+  //crear el cerebro de la animación de Rive
+  StateMachineController? _controller;
+  //SMI: State Machine Input: es una variable que se utiliza para controlar la animación de Rive desde el código de Flutter
+  SMIBool? _isChecking; //variable para controlar la animación de Rive cuando el usuario está escribiendo en el campo de email
+  SMIBool? _isHandsUp; //variable para controlar la animación de Rive cuando el usuario está escribiendo en el campo de password
+  SMITrigger? _trigSuccess; //variable para controlar la animación de Rive cuando el usuario hace clic en el botón de login
+  SMITrigger? _trigFail;
+  
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;//obtenemos el tamaño de la pantalla para ajustar la animación y los campos de texto
@@ -24,9 +33,31 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             children: [
               Expanded(
-                child: RiveAnimation.asset('animated_login_bear.riv')),//agregamos la animación de Rive en la parte superior de la pantalla
+                child: RiveAnimation.asset('animated_login_bear.riv',//agregamos la animación de Rive en la parte superior de la pantalla
+                stateMachines:['Login Machine'],//especificamos el nombre de la máquina de estados que queremos utilizar para controlar la animación de Rive
+                onInit: (artboart){
+                  _controller = StateMachineController.fromArtboard(artboart, 'Login Machine');
+                  if(_controller == null) return;
+                  artboart.addController(_controller!);
+                  //vinculamos las variables de la animación de Rive con las variables de Flutter para poder controlar la animación desde el código de Flutter
+                  _isChecking = _controller!.findSMI('isChecking') as SMIBool;
+                  _isHandsUp = _controller!.findSMI('isHandsUp') as SMIBool;
+                  _trigSuccess = _controller!.findSMI('trigSuccess') as SMITrigger;
+                  _trigFail = _controller!.findSMI('trigFail') as SMITrigger;
+                },
+                )),
               const SizedBox(height: 10), //separación entre la animación y el campo de email
               TextField(
+                onChanged: (value){
+                  if(_isHandsUp != null){
+                    //No tapes los ojos al ver email
+                    _isHandsUp!.change(false);
+                  }
+                  //Si isChecking no es null
+                  if(_isChecking == null) return;
+                  //Activar modo chismoso
+                    _isChecking!.change(true); 
+                },
                 decoration: InputDecoration(
                   hintText: 'Email',
                   prefixIcon: const Icon(Icons.email),//icono de email para el campo de email
@@ -37,6 +68,16 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 10), //separación entre el campo de email y el campo de password
               TextField(
+                onChanged: (value){
+                  if(_isChecking != null){
+                    //No quiero modo chismoso
+                    _isChecking!.change(false);
+                  }
+                  //Si isHandsUp no es null
+                  if(_isHandsUp == null) return;
+                  //Levantar las manos al ver password
+                    _isHandsUp!.change(true); 
+                },
                 obscureText: _obscureText, //ocultamos la contraseña por defecto  
                 decoration: InputDecoration(
                   hintText: 'Password',
