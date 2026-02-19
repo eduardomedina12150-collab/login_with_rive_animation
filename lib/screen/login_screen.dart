@@ -13,15 +13,35 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
 //crear variable para mostrar u ocultar la contraseña
   bool _obscureText = true;
-
+  //SMI: es una clase que se utiliza para controlar la animación de Rive desde el código de Flutter, es el cerebro de la animación de Rive, es decir, es el encargado de controlar las variables y los triggers de la animación de Rive desde el código de Flutter
   //crear el cerebro de la animación de Rive
   StateMachineController? _controller;
   //SMI: State Machine Input: es una variable que se utiliza para controlar la animación de Rive desde el código de Flutter
   SMIBool? _isChecking; //variable para controlar la animación de Rive cuando el usuario está escribiendo en el campo de email
   SMIBool? _isHandsUp; //variable para controlar la animación de Rive cuando el usuario está escribiendo en el campo de password
   SMITrigger? _trigSuccess; //variable para controlar la animación de Rive cuando el usuario hace clic en el botón de login
-  SMITrigger? _trigFail;
+  SMITrigger? _trigFail; //variable para controlar la animación de Rive cuando el usuario hace clic en el botón de login y la autenticación falla
+
+  //paso 1.1: crear variables para el focus de los campos de texto
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
   
+  //paso 1.2: Listenrs para FocusNodes (Oyentes/Chismosos)
+  @override
+  void initState() {
+    super.initState();
+    _emailFocusNode.addListener(() {
+      if(_emailFocusNode.hasFocus) {
+        if(_isHandsUp != null){
+          //No tapes los ojos al ver email
+          _isHandsUp?.change(false);
+        }
+      }
+    }); 
+    _passwordFocusNode.addListener(() {
+      _isHandsUp?.change(_passwordFocusNode.hasFocus); //Levantar las manos al ver password
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,10 +68,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 )),
               const SizedBox(height: 10), //separación entre la animación y el campo de email
               TextField(
+                //paso 1.3: asociar los focusNodes a los campos de texto
+                focusNode: _emailFocusNode,
                 onChanged: (value){
+                 //asociamos el focusNode al campo de email
                   if(_isHandsUp != null){
                     //No tapes los ojos al ver email
-                    _isHandsUp!.change(false);
+                    //_isHandsUp!.change(false);
                   }
                   //Si isChecking no es null
                   if(_isChecking == null) return;
@@ -68,10 +91,12 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 10), //separación entre el campo de email y el campo de password
               TextField(
+                //paso 1.3: asociar los focusNodes a los campos de texto
+                focusNode: _passwordFocusNode,
                 onChanged: (value){
                   if(_isChecking != null){
                     //No quiero modo chismoso
-                    _isChecking!.change(false);
+                    //_isChecking!.change(false);
                   }
                   //Si isHandsUp no es null
                   if(_isHandsUp == null) return;
@@ -105,5 +130,14 @@ class _LoginScreenState extends State<LoginScreen> {
         )
       ),
     );
+  }
+
+  //paso 1.4: limpiar los focusNodes para evitar fugas de memoria
+  @override
+  void dispose() {
+    //limpiar los focusNodes para evitar fugas de memoria
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    super.dispose();
   }
 }
