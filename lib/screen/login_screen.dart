@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rive/rive.dart';
-
+import 'dart:async';//importa el timer 
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,9 +22,14 @@ class _LoginScreenState extends State<LoginScreen> {
   SMITrigger? _trigSuccess; //variable para controlar la animación de Rive cuando el usuario hace clic en el botón de login
   SMITrigger? _trigFail; //variable para controlar la animación de Rive cuando el usuario hace clic en el botón de login y la autenticación falla
 
+//variable para el recorrido de la mirada 
+SMINumber? _numLook;
   //paso 1.1: crear variables para el focus de los campos de texto
   final _emailFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
+  //
+  Timer? _typingDebonc;
+
   
   //paso 1.2: Listenrs para FocusNodes (Oyentes/Chismosos)
   @override
@@ -35,6 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if(_isHandsUp != null){
           //No tapes los ojos al ver email
           _isHandsUp?.change(false);
+          _numLook?.value=50.0;
         }
       }
     }); 
@@ -64,6 +70,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   _isHandsUp = _controller!.findSMI('isHandsUp') as SMIBool;
                   _trigSuccess = _controller!.findSMI('trigSuccess') as SMITrigger;
                   _trigFail = _controller!.findSMI('trigFail') as SMITrigger;
+                  //2.3vincular note look 
+                  _numLook = _controller?.findSMI('numLook');
+
                 },
                 )),
               const SizedBox(height: 10), //separación entre la animación y el campo de email
@@ -80,6 +89,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   if(_isChecking == null) return;
                   //Activar modo chismoso
                     _isChecking!.change(true); 
+                    //2.4 implementar numlook 
+                    // ajustar el limite a 2 a 100 
+                    //80 como media de calibracion 
+                    final look =(value.length/80.0*100.0).clamp(0.0,100.0
+                    );//
+                    _numLook?.value=look;
+
+                    //3.3 debonce : si vuelve ateclear  
+                    //cancelar cualquier timer existente 
+                    _typingDebonc?.cancel();
+                    //crea timer
+                    _typingDebonc=Timer(const Duration(seconds: 3),(){
+
+                      if(!mounted)return;
+                      _isChecking?.change(false);
+                    });
+
                 },
                 decoration: InputDecoration(
                   hintText: 'Email',
@@ -138,6 +164,8 @@ class _LoginScreenState extends State<LoginScreen> {
     //limpiar los focusNodes para evitar fugas de memoria
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
+    _typingDebonc?.cancel();
     super.dispose();
+
   }
 }
